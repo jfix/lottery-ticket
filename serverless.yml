@@ -1,0 +1,14 @@
+service: lottery-planner
+provider:
+  name: aws
+  runtime: nodejs4.3
+  stage: dotenv
+
+functions:
+  planner:
+    handler: index.planner # file and module; required, handler set in AWS Lambda
+    events:
+      # http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+      - schedule:
+          enabled: false
+          rate: cron(0 10 ? * SUN *) # run at 10am each Sunday
