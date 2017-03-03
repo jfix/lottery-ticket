@@ -2,7 +2,9 @@ const mongoose = require('mongoose')
 
 const ticketSchema = new mongoose.Schema({
   date: { type: Date, default: new Date() },
-  ticketNumber: Number
+  ticketNumber: Number,
+  projectedTotal: Number,
+  currentTotal: Number
 },
 { collection: 'lottery-ticket' })
 

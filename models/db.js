@@ -7,7 +7,7 @@ mongoose.connect(`mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PWD}@$
 // CONNECTION EVENTS
 // When successfully connected
 mongoose.connection.on('connected', function () {
-  console.log('Mongoose default connection open')
+  console.log(`Mongoose default connection open at ${process.env.MONGO_HOST}:${process.env.MONGO_PORT}`)
 })
 
 // If the connection throws an error

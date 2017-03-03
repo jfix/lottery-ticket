@@ -2,7 +2,9 @@ service: lottery-planner
 provider:
   name: aws
   runtime: nodejs4.3
-  stage: dotenv
+  # stage: dev
+  region: eu-central-1
+  #memorySize: 1024 # tests have shown that more than 64 is never used
 
 functions:
   planner:
