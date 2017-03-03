@@ -1,46 +1,70 @@
-const moment = require('moment')
+'use strict'
 
 module.exports.planner = (event, context, callback) => {
-  require('./models/db')
-  const mongoose = require('mongoose')
-  const Conso = mongoose.model('Conso')
-  const LotteryTicket = mongoose.model('LotteryTicket')
+  require('dotenv').config()
+  const assert = require('assert')
+  const moment = require('moment')
+  const MongoClient = require('mongodb').MongoClient
+  const url = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PWD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB}`
+  MongoClient.connect(url, (err, db) => {
+    assert.equal(null, err)
+    console.log('Connected correctly to server')
 
-  // 1) get current total count of consumptions
-  Conso.count({}, (err, total) => {
-    if (err) console.error(err)
+    let total, weekly, ticketNumber
 
-    // 2) get last week's consumptions
-    const weekStart = moment().day(0).toDate() // last sunday
-    const weekEnd = moment().day(7).toDate()
-    const lastWeeksConso = {
-      'date': {
-        $gte: weekStart,
-        $lte: weekEnd
-      }
+    const ticketCollection = db.collection('lottery-ticket')
+    const consoCollection = db.collection('consos')
+
+    const getTotal = function (db, callback) {
+      const consoCollection = db.collection('consos')
+      consoCollection.count({}, (err, totalConsos) => {
+        if (err) console.error(err)
+        total = totalConsos
+        callback(total)
+      })
     }
-    Conso.find(lastWeeksConso, (err, docs) => {
-      if (err) console.error(err)
-      const lastWeeksConso = docs.length
-      // 3) total + (random value between 0 and weekly average)
-      const ticketNumber = total + Math.floor(Math.random() * lastWeeksConso)
-
-      console.log(`Week goes from ${weekStart} to ${weekEnd}.`)
-      console.log(`Current total: ${total}`)
-      console.log(`This week's consumption: ${lastWeeksConso}`)
-      console.log(`Projected total total: ${total + lastWeeksConso}`)
-      console.log(`The magic number is: ${ticketNumber}`)
-      console.log('-------------------------')
-      // 4) store value in db collection "lottery-ticket"
-      const ticket = {
+    const getWeeklyConso = function (db, callback) {
+      const weekStart = moment().day(0).toDate() // last sunday
+      const weekEnd = moment().day(7).toDate()
+      const lastWeeksConso = {
+        'date': {
+          $gte: weekStart,
+          $lte: weekEnd
+        }
+      }
+      consoCollection.find(lastWeeksConso).toArray((err, weeklyConsos) => {
+        if (err) console.error(err)
+        weekly = weeklyConsos.length
+        callback(weekly)
+      })
+    }
+    const recordTicket = function (db, callback) {
+      const ticketDocument = {
         ticketNumber,
-        projectedTotal: total + lastWeeksConso,
+        projectedTotal: total + weekly,
         currentTotal: total
       }
-      LotteryTicket.create(ticket, (err, doc) => {
-        if (err) callback(err)
-        mongoose.connection.close()
-        callback(null, `The magic number is: ${ticketNumber}`)
+      ticketCollection.insert(ticketDocument, (err, res) => {
+        if (err) console.error(err)
+        callback()
+      })
+    }
+
+    // here is where the action happens
+
+    // 1) get current total count of consumptions
+    getTotal(db, function () {
+      // 2) get last week's consumption
+      getWeeklyConso(db, function () {
+        // 3) choose a winning ticket number
+        ticketNumber = total + Math.floor(Math.random() * weekly)
+        console.log(`TOTAL: ${total}`)
+        console.log(`WEEKLY: ${weekly}`)
+        console.log(`TICKET: ${ticketNumber}`)
+        // 4) record the winning ticket number
+        recordTicket(db, function () {
+          db.close()
+        })
       })
     })
   })
