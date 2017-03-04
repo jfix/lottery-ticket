@@ -40,9 +40,10 @@ module.exports.planner = (event, context, callback) => {
     }
     const recordTicket = function (db, callback) {
       const ticketDocument = {
+        'date': new Date(),
         ticketNumber,
-        projectedTotal: total + weekly,
-        currentTotal: total
+        'projectedTotal': total + weekly,
+        'currentTotal': total
       }
       ticketCollection.insert(ticketDocument, (err, res) => {
         if (err) console.error(err)

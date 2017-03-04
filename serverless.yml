@@ -12,5 +12,9 @@ functions:
     events:
       # http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
       - schedule:
-          enabled: false
-          rate: cron(0 10 ? * SUN *) # run at 10am each Sunday
+          name: lucky-number-generator
+          description: Selects a weekly random number as a winner
+          # enabled: true -- enabled by default
+          # cron expressions are UTC-based
+          # http://docs.aws.amazon.com/lambda/latest/dg/tutorial-scheduled-events-schedule-expressions.html
+          rate: cron(0 12 ? * SAT *) # run at 12pm each Saturday
